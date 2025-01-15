@@ -19,14 +19,13 @@ else
     echo -e "---------------------------------------------\nTransfer failed, please retry again."
 fi
 
-#Another method
+#Another method using SFTP and not SCP
+# echo -e "Running $user_name@$remote"
+# sftp $user_name@$remote
 
-echo -e "Running $user_name@$remote"
-sftp $user_name@$remote
-
-if ["$?" -eq "0"]; then
-    echo -e "\nRunning put $local_dir"
-    put $local_dir
-else
-    echo -e "---------------------------------------------\nTransfer failed, please retry again."
-fi
+# if ["$?" -eq "0"]; then
+#     echo -e "\nRunning put $local_dir"
+#     put $local_dir
+# else
+#     echo -e "---------------------------------------------\nTransfer failed, please retry again."
+# fi
