@@ -10,29 +10,32 @@ param(
     [string]$VMName = "VMName",
     
     [Parameter(Mandatory=$false)]
-    [int]$WorkdayStartHour = 10,  # 10 AM UTC
+    [int]$WorkdayStartHour = 8,  # 8 AM UTC+1
     
     [Parameter(Mandatory=$false)]
-    [int]$WorkdayEndHour = 18    # 6 PM UTC
+    [int]$WorkdayEndHour = 18    # 6 PM UTC+1
 )
 
-# Function to check if current time is within working hours
-function Test-WorkingHours {
-    $currentTime = (Get-Date).ToUniversalTime() # Ensure UTC time is used
+# Function to check if current time is outside working hours
+function Test-OutsideWorkingHours {
+    $currentTime = (Get-Date).ToUniversalTime().AddHours(1) # Ensure UTC+1 i.e. West African Time is used
     $currentHour = $currentTime.Hour
     $isWeekend = $currentTime.DayOfWeek -in @('Saturday', 'Sunday')
     
+    # Shut down if it's a weekend
     if ($isWeekend) {
         Write-Output "Current day is weekend. VM should be shutdown."
-        return $false
+        return $true
     }
-    
-    if ($currentHour -ge $WorkdayStartHour -and $currentHour -lt $WorkdayEndHour) {
-        Write-Output "Current time is within working hours. VM should remain running."
+
+    # Shut down if before WorkdayStartHour or after WorkdayEndHour
+    if ($currentHour -lt $WorkdayStartHour -or $currentHour -ge $WorkdayEndHour) {
+        Write-Output "Current time is outside working hours. VM should be shutdown."
         return $true
     }
     
-    Write-Output "Current time is outside working hours. VM should be shutdown."
+    # Otherwise, VM is within working hours
+    Write-Output "Current time is within working hours. VM should remain running."
     return $false
 }
 
@@ -81,9 +84,9 @@ try {
 
     # Check if VM is running and if it's outside working hours
     if ($vmStatus.DisplayStatus -eq "VM running") {
-        $isWorkingHours = Test-WorkingHours
+        $isOutsideWorkingHours = Test-OutsideWorkingHours
 
-        if (-not $isWorkingHours) {
+        if ($isOutsideWorkingHours) {
             Write-Output "Initiating VM shutdown..."
             $shutdownResult = Stop-AzVM -ResourceGroupName $ResourceGroupName -Name $VMName -Force
             
